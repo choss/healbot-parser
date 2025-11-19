@@ -13,21 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@v1
       with:
         java-version: '17'
-        distribution: 'temurin'
-
-    - name: Download and install GraalVM
-      run: |
-        curl -L -o graalvm.zip https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.9/graalvm-community-jdk-17.0.9_windows-x64_bin.zip
-        unzip graalvm.zip
-        echo "GRAALVM_HOME=$PWD/graalvm-community-openjdk-17.0.9+9.1" >> $GITHUB_ENV
-        echo "$PWD/graalvm-community-openjdk-17.0.9+9.1/bin" >> $GITHUB_PATH
-
-    - name: Install native-image
-      run: gu install native-image
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        native-image-job-reports: 'true'
 
     - name: Build with Maven
       run: mvn clean package
@@ -35,12 +27,22 @@ jobs:
     - name: Build native image
       run: native-image --no-fallback -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
 
+    - name: Verify executable
+      run: |
+        if (Test-Path healbot-parser.exe) {
+          Write-Host "✓ Executable built successfully"
+          Get-Item healbot-parser.exe | Select-Object Name, Length, LastWriteTime
+        } else {
+          Write-Error "✗ Executable not found"
+          exit 1
+        }
+
     - name: Create snapshot release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: snapshot
         name: Snapshot Release
-        body: Latest snapshot build
+        body: Latest snapshot build from ${{ github.sha }}
         files: healbot-parser.exe
         token: ${{ secrets.GITHUB_TOKEN }}
       env:
