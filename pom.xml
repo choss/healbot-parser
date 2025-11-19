@@ -35,7 +35,24 @@
             <artifactId>thymeleaf</artifactId>
             <version>${thymeleaf.version}</version>
         </dependency>
+
+        <!-- GraalVM Reachability Metadata for native image compilation -->
+        <dependency>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>graalvm-reachability-metadata</artifactId>
+            <version>0.10.0</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
+
+    <repositories>
+        <!-- GraalVM Repository for reachability metadata -->
+        <repository>
+            <id>graalvm</id>
+            <name>GraalVM Repository</name>
+            <url>https://repo1.maven.org/maven2</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>

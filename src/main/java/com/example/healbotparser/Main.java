@@ -27,11 +27,22 @@ public class Main {
 
         String wowDirectoryPath;
         if (args.length < 1) {
-            // Show file chooser dialog
-            wowDirectoryPath = showDirectoryChooser();
-            if (wowDirectoryPath == null) {
-                System.out.println("No directory selected. Exiting.");
-                System.exit(0);
+            // Check if we're running in a native image (GraalVM)
+            boolean isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
+            
+            if (isNativeImage) {
+                // In native image mode, use current directory as default
+                wowDirectoryPath = System.getProperty("user.dir");
+                System.out.println("Running as native image. Using current directory: " + wowDirectoryPath);
+                System.out.println("To specify a different directory, use: healbot-parser <wow-directory> [output-file]");
+                System.out.println();
+            } else {
+                // Show file chooser dialog (only in JAR mode)
+                wowDirectoryPath = showDirectoryChooser();
+                if (wowDirectoryPath == null) {
+                    System.out.println("No directory selected. Exiting.");
+                    System.exit(0);
+                }
             }
         } else {
             wowDirectoryPath = args[0];

@@ -169,7 +169,7 @@ public class HealBotParser {
     public void generateHtmlReport(Map<String, Map<String, List<BindingInfo>>> data, String outputFile) throws IOException {
         TemplateEngine templateEngine = new TemplateEngine();
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setPrefix("/templates/");
+        templateResolver.setPrefix("templates/");
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setCacheable(false);

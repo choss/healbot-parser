@@ -27,8 +27,8 @@ jobs:
     - name: Build native image
       run: |
         native-image --no-fallback `
+          --enable-automatic-reachability-metadata `
           --enable-url-protocols=http,https `
-          --initialize-at-run-time=java.awt.Toolkit `
           -H:+AddAllCharsets `
           -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
 
@@ -54,6 +54,8 @@ jobs:
         tag_name: snapshot-${{ github.run_number }}-${{ github.sha }}
         name: Snapshot Release
         body: Latest snapshot build from ${{ github.sha }}
-        files: healbot-parser.exe
+        files: |
+          healbot-parser.exe
+          target/healbot-parser-0.1.0-SNAPSHOT.jar
         token: ${{ secrets.GITHUB_TOKEN }}
         prerelease: true
