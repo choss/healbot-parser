@@ -1,26 +1,18 @@
 package com.example.healbotparser;
 
-public class TestParser {
-    public static void main(String[] args) {
-        // Test the convertToHumanReadable logic directly
-        String[] testInputs = {
-            "C:A", "C:F", "C:M", "C:T", "C:TM", "C:S", "C:TL",  // Known commands
-            "C:D", "C:E", "C:B",  // Unknown/custom commands
-            "S:123^Flash Heal",   // Spell code
-            "I:12345"             // Item code
-        };
+/**
+ * Utility class for converting HealBot internal codes to human-readable names.
+ * This class contains only the conversion logic with no external dependencies.
+ */
+public class HealBotValueConverter {
 
-        System.out.println("Testing convertToHumanReadable logic:");
-        System.out.println("=====================================");
-
-        for (String input : testInputs) {
-            String result = convertToHumanReadable(input);
-            System.out.println("Input: " + input + " -> Output: " + result);
-        }
-    }
-
-    // Copy of the convertToHumanReadable logic for testing
-    private static String convertToHumanReadable(String rawValue) {
+    /**
+     * Converts HealBot internal codes to human-readable names.
+     *
+     * @param rawValue The raw value from HealBot configuration
+     * @return Human-readable representation
+     */
+    public static String convertToHumanReadable(String rawValue) {
         if (rawValue == null || rawValue.isEmpty()) {
             return rawValue;
         }
@@ -68,6 +60,7 @@ public class TestParser {
             return "Item: " + rawValue.substring(2);
         }
 
+        // Return as-is for other values
         return rawValue;
     }
 }
