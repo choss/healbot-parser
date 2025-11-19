@@ -359,17 +359,17 @@ public class HealBotParser {
                 // Format: S:spellId^spellName
                 String spellId = spellPart.substring(0, caretIndex);
                 String spellName = spellPart.substring(caretIndex + 1);
-                return "<a href=\"https://www.wowhead.com/spell=" + spellId + "\" target=\"_blank\" class=\"spell-link\">🔗 " + spellName + "</a>";
+                return "<a href=\"https://www.wowhead.com/spell=" + spellId + "\" target=\"_blank\" class=\"spell-link\" title=\"View " + spellName + " on Wowhead\">🔗 " + spellName + "</a>";
             } else {
                 // Format: S:spellId:spellName or just S:spellId
                 int colonIndex = spellPart.indexOf(':');
                 if (colonIndex > 0) {
                     String spellId = spellPart.substring(0, colonIndex);
                     String spellName = spellPart.substring(colonIndex + 1);
-                    return "<a href=\"https://www.wowhead.com/spell=" + spellId + "\" target=\"_blank\" class=\"spell-link\">🔗 " + spellName + "</a>";
+                    return "<a href=\"https://www.wowhead.com/spell=" + spellId + "\" target=\"_blank\" class=\"spell-link\" title=\"View " + spellName + " on Wowhead\">🔗 " + spellName + "</a>";
                 } else {
                     // Just spellId
-                    return "<a href=\"https://www.wowhead.com/spell=" + spellPart + "\" target=\"_blank\" class=\"spell-link\">🔗 Spell: " + spellPart + "</a>";
+                    return "<a href=\"https://www.wowhead.com/spell=" + spellPart + "\" target=\"_blank\" class=\"spell-link\" title=\"View Spell " + spellPart + " on Wowhead\">🔗 Spell: " + spellPart + "</a>";
                 }
             }
         }
