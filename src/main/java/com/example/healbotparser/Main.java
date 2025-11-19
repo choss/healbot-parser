@@ -1,5 +1,8 @@
 package com.example.healbotparser;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -27,21 +30,28 @@ public class Main {
 
         String wowDirectoryPath;
         if (args.length < 1) {
-            // Check if we're running in a native image (GraalVM)
-            boolean isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
-            
-            if (isNativeImage) {
-                // In native image mode, use current directory as default
-                wowDirectoryPath = System.getProperty("user.dir");
-                System.out.println("Running as native image. Using current directory: " + wowDirectoryPath);
-                System.out.println("To specify a different directory, use: healbot-parser <wow-directory> [output-file]");
-                System.out.println();
+            // Try to detect default WoW path
+            String defaultPath = getDefaultWowPath();
+            if (defaultPath != null) {
+                wowDirectoryPath = defaultPath;
+                System.out.println("Using detected WoW directory: " + wowDirectoryPath);
             } else {
-                // Show file chooser dialog (only in JAR mode)
-                wowDirectoryPath = showDirectoryChooser();
-                if (wowDirectoryPath == null) {
-                    System.out.println("No directory selected. Exiting.");
-                    System.exit(0);
+                // Check if we're running in a native image (GraalVM)
+                boolean isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
+                
+                if (isNativeImage) {
+                    // In native image mode, use current directory as fallback
+                    wowDirectoryPath = System.getProperty("user.dir");
+                    System.out.println("No WoW directory detected. Using current directory: " + wowDirectoryPath);
+                    System.out.println("To specify a different directory, use: healbot-parser <wow-directory> [output-file]");
+                    System.out.println();
+                } else {
+                    // Show file chooser dialog (only in JAR mode)
+                    wowDirectoryPath = showDirectoryChooser();
+                    if (wowDirectoryPath == null) {
+                        System.out.println("No directory selected. Exiting.");
+                        System.exit(0);
+                    }
                 }
             }
         } else {
@@ -74,6 +84,67 @@ public class Main {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    /**
+     * Attempts to detect the default World of Warcraft installation directory.
+     * @return the path to WoW if found, null otherwise.
+     */
+    private static String getDefaultWowPath() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String[] candidates;
+
+        if (os.contains("win")) {
+            // Try to read from Windows Registry first
+            try {
+                Process process = Runtime.getRuntime().exec("reg query \"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Blizzard Entertainment\\World of Warcraft\" /v InstallPath");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.trim().startsWith("InstallPath")) {
+                        String[] parts = line.trim().split("\\s+", 3);
+                        if (parts.length >= 3) {
+                            String path = parts[2];
+                            Path wowPath = Paths.get(path);
+                            if (Files.exists(wowPath) && Files.isDirectory(wowPath)) {
+                                return path;
+                            }
+                        }
+                    }
+                }
+                process.waitFor();
+            } catch (Exception e) {
+                // Ignore exceptions and fall back to hardcoded paths
+            }
+
+            // Fallback to hardcoded paths
+            candidates = new String[] {
+                "C:\\Program Files (x86)\\World of Warcraft",
+                "C:\\Program Files\\World of Warcraft",
+                "D:\\Program Files (x86)\\World of Warcraft",
+                "D:\\Program Files\\World of Warcraft"
+            };
+        } else if (os.contains("mac")) {
+            candidates = new String[] {
+                "/Applications/World of Warcraft"
+            };
+        } else if (os.contains("linux") || os.contains("unix")) {
+            String home = System.getProperty("user.home");
+            candidates = new String[] {
+                home + "/.wine/drive_c/Program Files (x86)/World of Warcraft",
+                home + "/.wine/drive_c/Program Files/World of Warcraft"
+            };
+        } else {
+            return null;
+        }
+
+        for (String candidate : candidates) {
+            Path path = Paths.get(candidate);
+            if (Files.exists(path) && Files.isDirectory(path)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 
     /**
