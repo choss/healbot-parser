@@ -28,7 +28,7 @@ jobs:
       run: |
         native-image --no-fallback `
           --enable-url-protocols=http,https `
-          --initialize-at-build-time=java.awt `
+          --initialize-at-run-time=java.awt.Toolkit `
           -H:+AddAllCharsets `
           -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
 
