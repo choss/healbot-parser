@@ -125,7 +125,10 @@
     "allDeclaredMethods": true,
     "allPublicMethods": true,
     "allDeclaredFields": true,
-    "allPublicFields": true
+    "allPublicFields": true,
+    "condition": {
+      "typeReachable": "org.thymeleaf.standard.expression.OGNLVariableExpressionEvaluator"
+    }
   },
   {
     "name": "org.thymeleaf.expression.Maps",
@@ -1799,5 +1802,14 @@
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
     "allPublicMethods": true
+  },
+  {
+    "name": "com.example.healbotparser.BindingInfo",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
   }
 ]
