@@ -221,7 +221,9 @@
         }
 
         .toc-content.open {
-            max-height: 1000px;
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .toc-account {
@@ -270,13 +272,15 @@
         }
 
         .toc-server-content {
-            max-height: 500px;
-            overflow: hidden;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
             transition: max-height 0.3s ease;
         }
 
         .toc-server-content.collapsed {
             max-height: 0;
+            overflow: hidden;
         }
 
         .toc-character {
