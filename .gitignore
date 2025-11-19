@@ -38,3 +38,6 @@ Thumbs.db
 
 # Generated reports
 healbot-report.html
+
+# Test data (local development only)
+test-data2/
