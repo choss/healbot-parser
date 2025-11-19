@@ -27,7 +27,6 @@ jobs:
     - name: Build native image
       run: |
         native-image --no-fallback `
-          --enable-automatic-reachability-metadata `
           --enable-url-protocols=http,https `
           -H:+AddAllCharsets `
           -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
