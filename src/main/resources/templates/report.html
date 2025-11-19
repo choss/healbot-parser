@@ -145,6 +145,13 @@
             color: #555;
         }
 
+        .filename-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #666;
+            background: #f9f9f9;
+        }
+
         .no-modifier {
             color: #999;
             font-style: italic;
@@ -432,8 +439,10 @@
                     <h2 th:id="${entry.key}" th:text="${entry.key}">Account/Character</h2>
                     <a href="#tocContent" class="back-to-toc">↑ Back to TOC</a>
                 </div>
-                <div class="account-section">
-                    <h3>Click-Casting Bindings</h3>
+                
+                <!-- Loop through each file -->
+                <div th:each="fileEntry : ${entry.value}" class="account-section">
+                    <h3 th:text="${fileEntry.key}">HealBot.lua</h3>
                     <table class="sortable-table">
                         <thead>
                             <tr>
@@ -443,7 +452,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="binding : ${entry.value}" 
+                            <tr th:each="binding : ${fileEntry.value}" 
                                 th:data-button="${binding.button}" 
                                 th:data-modifier="${binding.modifier == '' ? 'none' : binding.modifier}">
                                 <td class="button-cell">
@@ -455,8 +464,8 @@
                                 </td>
                                 <td class="spell-cell" th:utext="${binding.spell}">Spell</td>
                             </tr>
-                            <tr th:if="${#lists.isEmpty(entry.value)}">
-                                <td colspan="3" class="no-data">No bindings configured for this account/character.</td>
+                            <tr th:if="${#lists.isEmpty(fileEntry.value)}">
+                                <td colspan="3" class="no-data">No bindings configured for this file.</td>
                             </tr>
                         </tbody>
                     </table>

@@ -55,11 +55,11 @@ public class HealBotParser {
      * Traverses WTF/Account/{account}/{server}/{character}/SavedVariables/HealBot*.lua files.
      *
      * @param wowDirectory The root directory of the World of Warcraft installation
-     * @return Map of identifier to button-spell mappings
+     * @return Map of identifier to Map of filename to list of bindings
      * @throws IOException if file operations fail
      */
-    public Map<String, Map<String, String>> parseDirectory(Path wowDirectory) throws IOException {
-        Map<String, Map<String, String>> result = new HashMap<>();
+    public Map<String, Map<String, List<BindingInfo>>> parseDirectory(Path wowDirectory) throws IOException {
+        Map<String, Map<String, List<BindingInfo>>> result = new HashMap<>();
 
         Path wtfPath = wowDirectory.resolve("WTF");
         if (!Files.exists(wtfPath)) {
@@ -90,9 +90,15 @@ public class HealBotParser {
                                                     files.filter(p -> p.getFileName().toString().startsWith("HealBot") && p.toString().endsWith(".lua"))
                                                         .forEach(file -> {
                                                             String identifier = friendlyIdentifier(account, server, character);
+                                                            String filename = file.getFileName().toString();
                                                             Map<String, String> spells = parseHealBotFile(file);
                                                             if (!spells.isEmpty()) {
-                                                                result.put(identifier, spells);
+                                                                Map<String, List<BindingInfo>> fileMap = result.computeIfAbsent(identifier, k -> new LinkedHashMap<>());
+                                                                List<BindingInfo> bindings = fileMap.computeIfAbsent(filename, k -> new ArrayList<>());
+                                                                for (Map.Entry<String, String> entry : spells.entrySet()) {
+                                                                    String[] parts = parseButtonName(entry.getKey());
+                                                                    bindings.add(new BindingInfo(parts[1], parts[0], entry.getValue(), filename));
+                                                                }
                                                             }
                                                         });
                                                 }
@@ -156,11 +162,11 @@ public class HealBotParser {
     /**
      * Generates an HTML report using Thymeleaf template.
      *
-     * @param data The parsed data
+     * @param data The parsed data grouped by character and filename
      * @param outputFile Path to write the HTML report
      * @throws IOException if writing fails
      */
-    public void generateHtmlReport(Map<String, Map<String, String>> data, String outputFile) throws IOException {
+    public void generateHtmlReport(Map<String, Map<String, List<BindingInfo>>> data, String outputFile) throws IOException {
         TemplateEngine templateEngine = new TemplateEngine();
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("/templates/");
@@ -173,7 +179,7 @@ public class HealBotParser {
         Map<String, Map<String, List<String>>> toc = createTableOfContents(data);
 
         Context context = new Context();
-        context.setVariable("data", restructureDataForDisplay(data, toc));
+        context.setVariable("data", sortDataForDisplay(data, toc));
         context.setVariable("toc", toc);
 
         String html = templateEngine.process("report", context);
@@ -187,7 +193,7 @@ public class HealBotParser {
      * Creates a table of contents structure sorted by account/server/character.
      * Servers with more characters are sorted first.
      */
-    private Map<String, Map<String, List<String>>> createTableOfContents(Map<String, Map<String, String>> data) {
+    private Map<String, Map<String, List<String>>> createTableOfContents(Map<String, Map<String, List<BindingInfo>>> data) {
         // Structure: Account -> Server -> List of Characters
         Map<String, Map<String, List<String>>> toc = new HashMap<>();
 
@@ -264,46 +270,41 @@ public class HealBotParser {
     }
 
     /**
-     * Restructures the data to separate modifiers from base buttons.
-     * Creates a list of binding objects for each account.
-     * Orders the data to match the TOC sorting.
+     * Sorts the data to match TOC ordering.
+     * Sorts files alphabetically, and bindings within each file by modifier and button.
      */
-    private Map<String, List<BindingInfo>> restructureDataForDisplay(Map<String, Map<String, String>> data, Map<String, Map<String, List<String>>> toc) {
-        Map<String, List<BindingInfo>> restructured = new LinkedHashMap<>();
+    private Map<String, Map<String, List<BindingInfo>>> sortDataForDisplay(Map<String, Map<String, List<BindingInfo>>> data, Map<String, Map<String, List<String>>> toc) {
+        Map<String, Map<String, List<BindingInfo>>> sorted = new LinkedHashMap<>();
 
         // Get the sorted order from TOC
         List<String> sortedIdentifiers = getSortedIdentifiersFromTOC(toc);
 
         // Process data in TOC order
         for (String identifier : sortedIdentifiers) {
-            Map<String, String> bindings = data.get(identifier);
-            if (bindings != null && !bindings.isEmpty()) {
-                List<BindingInfo> accountBindings = new ArrayList<>();
-
-                for (Map.Entry<String, String> bindingEntry : bindings.entrySet()) {
-                    String buttonName = bindingEntry.getKey();
-                    String spell = bindingEntry.getValue();
-
-                    // Parse modifier and base button
-                    String[] parts = parseButtonName(buttonName);
-                    String modifier = parts[0];
-                    String baseButton = parts[1];
-
-                    accountBindings.add(new BindingInfo(baseButton, modifier, spell));
-                }
-
-                // Sort by modifier first (none, then Shift), then by button
-                accountBindings.sort((a, b) -> {
-                    int modifierCompare = a.getModifier().compareTo(b.getModifier());
-                    if (modifierCompare != 0) return modifierCompare;
-                    return a.getButton().compareTo(b.getButton());
+            Map<String, List<BindingInfo>> fileMap = data.get(identifier);
+            if (fileMap != null && !fileMap.isEmpty()) {
+                Map<String, List<BindingInfo>> sortedFiles = new LinkedHashMap<>();
+                
+                // Sort files alphabetically
+                fileMap.keySet().stream().sorted().forEach(filename -> {
+                    List<BindingInfo> bindings = fileMap.get(filename);
+                    List<BindingInfo> sortedBindings = new ArrayList<>(bindings);
+                    
+                    // Sort bindings by modifier, then button
+                    sortedBindings.sort((a, b) -> {
+                        int modifierCompare = a.getModifier().compareTo(b.getModifier());
+                        if (modifierCompare != 0) return modifierCompare;
+                        return a.getButton().compareTo(b.getButton());
+                    });
+                    
+                    sortedFiles.put(filename, sortedBindings);
                 });
 
-                restructured.put(identifier, accountBindings);
+                sorted.put(identifier, sortedFiles);
             }
         }
 
-        return restructured;
+        return sorted;
     }
 
     /**

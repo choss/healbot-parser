@@ -2,6 +2,7 @@ package com.example.healbotparser;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -48,7 +49,7 @@ public class Main {
 
         try {
             System.out.println("Parsing HealBot SavedVariables...");
-            Map<String, Map<String, String>> data = parser.parseDirectory(wowPath);
+            Map<String, Map<String, List<BindingInfo>>> data = parser.parseDirectory(wowPath);
 
             System.out.println("Generating HTML report...");
             parser.generateHtmlReport(data, outputFile);
