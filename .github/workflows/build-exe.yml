@@ -25,8 +25,9 @@ jobs:
       run: mvn clean package
 
     - name: Build native image
+      shell: cmd
       run: |
-        native-image --no-fallback --enable-url-protocols=http,https -H:+AddAllCharsets -Dfile.encoding=UTF-8 -H:IncludeResources=templates/.*\.html -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
+        native-image --no-fallback --enable-url-protocols=http,https -H:+AddAllCharsets -Dfile.encoding=UTF-8 -H:IncludeResources="templates/.*\.html" -jar target/healbot-parser-0.1.0-SNAPSHOT.jar -o healbot-parser
 
     - name: Verify executable
       run: |
