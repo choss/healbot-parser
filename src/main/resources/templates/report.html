@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealBot Configuration Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        h3 {
+            color: #666;
+            margin-top: 20px;
+            padding-left: 10px;
+            border-left: 3px solid #2196F3;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .no-data {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .combo {
+            font-family: 'Courier New', monospace;
+            background-color: #e8f5e9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .spell-name {
+            color: #1976D2;
+            font-weight: 500;
+        }
+        
+        .spell-id {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .button-info {
+            color: #F57C00;
+        }
+        
+        .target-type {
+            color: #7B1FA2;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HealBot Configuration Report</h1>
+        
+        <div th:if="${characters.isEmpty()}">
+            <p class="no-data">No characters found in HealBot configuration.</p>
+        </div>
+        
+        <div th:each="character : ${characters}">
+            <h2 th:text="${character}">Character Name</h2>
+            
+            <div th:if="${keyCombos.containsKey(character)}">
+                <div th:each="profileEntry : ${keyCombos.get(character)}">
+                    <h3 th:text="'Profile: ' + ${profileEntry.key}">Profile Name</h3>
+                    
+                    <div th:if="${profileEntry.value.bindings.isEmpty()}">
+                        <p class="no-data">No key bindings configured for this profile.</p>
+                    </div>
+                    
+                    <table th:if="${!profileEntry.value.bindings.isEmpty()}">
+                        <thead>
+                            <tr>
+                                <th>Key Combo</th>
+                                <th>Spell Name</th>
+                                <th>Spell ID</th>
+                                <th>Button</th>
+                                <th>Target Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="binding : ${profileEntry.value.bindings}">
+                                <td><span class="combo" th:text="${binding.combo}">Ctrl+Left</span></td>
+                                <td><span class="spell-name" th:text="${binding.spellName}">Heal</span></td>
+                                <td><span class="spell-id" th:text="${binding.spellId}">12345</span></td>
+                                <td><span class="button-info" th:text="${binding.button}">1</span></td>
+                                <td><span class="target-type" th:text="${binding.targetType}">target</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div th:unless="${keyCombos.containsKey(character)}">
+                <p class="no-data">No spell configurations found for this character.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
