@@ -3,6 +3,9 @@ package com.example.healbotparser;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /**
  * Main entry point for the HealBot SavedVariables Parser.
@@ -21,15 +24,18 @@ public class Main {
         System.out.println("Version: 1.0-SNAPSHOT");
         System.out.println();
 
+        String wowDirectoryPath;
         if (args.length < 1) {
-            System.err.println("Error: No WoW directory path provided.");
-            System.err.println("Usage: java -jar healbot-parser.jar <wow-directory-path> [output-file]");
-            System.err.println();
-            System.err.println("Example: java -jar healbot-parser.jar \"C:\\Program Files (x86)\\World of Warcraft\"");
-            System.exit(1);
+            // Show file chooser dialog
+            wowDirectoryPath = showDirectoryChooser();
+            if (wowDirectoryPath == null) {
+                System.out.println("No directory selected. Exiting.");
+                System.exit(0);
+            }
+        } else {
+            wowDirectoryPath = args[0];
         }
 
-        String wowDirectoryPath = args[0];
         String outputFile = args.length > 1 ? args[1] : "healbot-report.html";
 
         System.out.println("WoW Directory: " + wowDirectoryPath);
@@ -57,4 +63,26 @@ public class Main {
             System.exit(1);
         }
     }
-}
+
+    /**
+     * Shows a directory chooser dialog for selecting the WoW folder.
+     * @return the selected directory path, or null if cancelled.
+     */
+    private static String showDirectoryChooser() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select World of Warcraft Directory");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+
+        JFrame frame = new JFrame();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setAlwaysOnTop(true);
+
+        int returnVal = chooser.showOpenDialog(frame);
+        frame.dispose();
+
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile().getAbsolutePath();
+        }
+        return null;
+    }
