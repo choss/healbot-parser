@@ -125,10 +125,7 @@
     "allDeclaredMethods": true,
     "allPublicMethods": true,
     "allDeclaredFields": true,
-    "allPublicFields": true,
-    "condition": {
-      "typeReachable": "org.thymeleaf.standard.expression.OGNLVariableExpressionEvaluator"
-    }
+    "allPublicFields": true
   },
   {
     "name": "org.thymeleaf.expression.Maps",
