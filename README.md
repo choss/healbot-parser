@@ -2,9 +2,11 @@
 
 A tool for parsing World of Warcraft HealBot addon configuration files and generating comprehensive HTML reports of your click-casting setups.
 
+*Note: This app and documentation were exclusively vibe coded, but tested and works for my setup.*
+
 ## What It Does
 
-This parser analyzes your HealBot SavedVariables files to extract and organize your click-casting configurations. It generates a beautiful, interactive HTML report showing:
+This parser analyzes your HealBot SavedVariables files to extract and organize your click-casting configurations. It automatically searches your World of Warcraft installation directory and generates a beautiful, interactive HTML report showing:
 
 - **All your characters** across different accounts and servers
 - **Multiple HealBot files** per character (HealBot.lua and HealBot_Data.lua)
@@ -69,8 +71,10 @@ healbot-parser.exe [wow-directory] [output-file]
 - `wow-directory`: Path to your World of Warcraft installation directory (optional)
   - If not provided:
     - **JAR version**: Shows a file chooser dialog
-    - **Native version**: Uses the current directory
+    - **Native version**: Automatically searches for your World of Warcraft installation, or uses the current directory if not found
 - `output-file`: Name of the output HTML file (optional, defaults to `healbot-report.html`)
+
+The HTML report is generated in the same directory as the executable or JAR file.
 
 ### Examples
 
@@ -90,7 +94,13 @@ java -jar healbot-parser-0.1.0-SNAPSHOT.jar "C:\Program Files (x86)\World of War
 java -jar healbot-parser-0.1.0-SNAPSHOT.jar "C:\Program Files (x86)\World of Warcraft" my-report.html
 ```
 
-#### Example 4: Using native executable
+#### Example 4: Using native executable (automatic detection)
+```bash
+healbot-parser.exe
+```
+This will automatically find your World of Warcraft installation and generate `healbot-report.html` in the same directory as the executable.
+
+#### Example 5: Using native executable with specific path
 ```bash
 healbot-parser.exe "C:\Program Files (x86)\World of Warcraft"
 ```
@@ -113,7 +123,7 @@ World of Warcraft/
 
 ## Output
 
-The parser generates an HTML report with:
+The parser generates an HTML report in the same directory as the executable or JAR file, containing:
 
 ### Table of Contents
 - Collapsible navigation showing all accounts, servers, and characters
