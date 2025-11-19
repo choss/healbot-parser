@@ -331,7 +331,7 @@ public class HealBotParser {
      * @param rawValue The raw value from HealBot configuration
      * @return Human-readable representation
      */
-    private String convertToHumanReadable(String rawValue) {
+    public String convertToHumanReadable(String rawValue) {
         if (rawValue == null || rawValue.isEmpty()) {
             return rawValue;
         }
@@ -347,7 +347,7 @@ public class HealBotParser {
                 case "TM" -> "MainAssist";
                 case "S" -> "Stop";
                 case "TL" -> "Tell";
-                default -> "Command: " + commandCode;
+                default -> "Custom Command: " + commandCode;
             };
         }
 
