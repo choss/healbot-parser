@@ -8,6 +8,9 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+
+# GraalVM
+graalvm*/
 .mvn/wrapper/maven-wrapper.jar
 
 # Java
