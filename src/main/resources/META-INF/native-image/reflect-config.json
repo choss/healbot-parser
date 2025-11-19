@@ -468,7 +468,8 @@
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
-    "allPublicMethods": true
+    "allPublicMethods": true,
+    "allDeclaredClasses": true
   },
   {
     "name": "org.luaj.vm2.lib.TableLib",
