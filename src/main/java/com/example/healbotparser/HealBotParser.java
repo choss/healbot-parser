@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -168,8 +169,12 @@ public class HealBotParser {
         templateResolver.setCacheable(false);
         templateEngine.setTemplateResolver(templateResolver);
 
+        // Create TOC first to get the sorting order
+        Map<String, Map<String, List<String>>> toc = createTableOfContents(data);
+
         Context context = new Context();
-        context.setVariable("data", restructureDataForDisplay(data));
+        context.setVariable("data", restructureDataForDisplay(data, toc));
+        context.setVariable("toc", toc);
 
         String html = templateEngine.process("report", context);
 
@@ -179,37 +184,123 @@ public class HealBotParser {
     }
 
     /**
+     * Creates a table of contents structure sorted by account/server/character.
+     * Servers with more characters are sorted first.
+     */
+    private Map<String, Map<String, List<String>>> createTableOfContents(Map<String, Map<String, String>> data) {
+        // Structure: Account -> Server -> List of Characters
+        Map<String, Map<String, List<String>>> toc = new HashMap<>();
+
+        // Parse all identifiers and group them
+        for (String identifier : data.keySet()) {
+            String[] parts = identifier.split("/");
+            if (parts.length == 3) {
+                String account = parts[0];
+                String server = parts[1];
+                String character = parts[2];
+
+                toc.computeIfAbsent(account, k -> new HashMap<>())
+                   .computeIfAbsent(server, k -> new ArrayList<>())
+                   .add(character);
+            }
+        }
+
+        // Sort accounts alphabetically
+        Map<String, Map<String, List<String>>> sortedToc = new HashMap<>();
+        toc.entrySet().stream()
+           .sorted(Map.Entry.comparingByKey())
+           .forEach(accountEntry -> {
+               String account = accountEntry.getKey();
+               Map<String, List<String>> servers = accountEntry.getValue();
+
+               // Sort servers by character count (descending), then alphabetically
+               Map<String, List<String>> sortedServers = new HashMap<>();
+               servers.entrySet().stream()
+                      .sorted((a, b) -> {
+                          int countCompare = Integer.compare(b.getValue().size(), a.getValue().size());
+                          if (countCompare != 0) return countCompare;
+                          return a.getKey().compareTo(b.getKey());
+                      })
+                      .forEach(serverEntry -> {
+                          String server = serverEntry.getKey();
+                          List<String> characters = serverEntry.getValue();
+
+                          // Sort characters alphabetically
+                          characters.sort(String::compareTo);
+                          sortedServers.put(server, characters);
+                      });
+
+               sortedToc.put(account, sortedServers);
+           });
+
+        return sortedToc;
+    }
+
+    /**
+     * Extracts the sorted list of identifiers from the TOC structure.
+     * This ensures the report sections appear in the same order as the TOC.
+     */
+    private List<String> getSortedIdentifiersFromTOC(Map<String, Map<String, List<String>>> toc) {
+        List<String> sortedIdentifiers = new ArrayList<>();
+
+        // Iterate through accounts in TOC order (already sorted alphabetically)
+        for (Map.Entry<String, Map<String, List<String>>> accountEntry : toc.entrySet()) {
+            String account = accountEntry.getKey();
+            Map<String, List<String>> servers = accountEntry.getValue();
+
+            // Iterate through servers in TOC order (already sorted by character count, then alphabetically)
+            for (Map.Entry<String, List<String>> serverEntry : servers.entrySet()) {
+                String server = serverEntry.getKey();
+                List<String> characters = serverEntry.getValue();
+
+                // Iterate through characters in TOC order (already sorted alphabetically)
+                for (String character : characters) {
+                    sortedIdentifiers.add(account + "/" + server + "/" + character);
+                }
+            }
+        }
+
+        return sortedIdentifiers;
+    }
+
+    /**
      * Restructures the data to separate modifiers from base buttons.
      * Creates a list of binding objects for each account.
+     * Orders the data to match the TOC sorting.
      */
-    private Map<String, List<BindingInfo>> restructureDataForDisplay(Map<String, Map<String, String>> data) {
-        Map<String, List<BindingInfo>> restructured = new HashMap<>();
+    private Map<String, List<BindingInfo>> restructureDataForDisplay(Map<String, Map<String, String>> data, Map<String, Map<String, List<String>>> toc) {
+        Map<String, List<BindingInfo>> restructured = new LinkedHashMap<>();
 
-        for (Map.Entry<String, Map<String, String>> accountEntry : data.entrySet()) {
-            String account = accountEntry.getKey();
-            Map<String, String> bindings = accountEntry.getValue();
-            List<BindingInfo> accountBindings = new ArrayList<>();
+        // Get the sorted order from TOC
+        List<String> sortedIdentifiers = getSortedIdentifiersFromTOC(toc);
 
-            for (Map.Entry<String, String> bindingEntry : bindings.entrySet()) {
-                String buttonName = bindingEntry.getKey();
-                String spell = bindingEntry.getValue();
+        // Process data in TOC order
+        for (String identifier : sortedIdentifiers) {
+            Map<String, String> bindings = data.get(identifier);
+            if (bindings != null && !bindings.isEmpty()) {
+                List<BindingInfo> accountBindings = new ArrayList<>();
 
-                // Parse modifier and base button
-                String[] parts = parseButtonName(buttonName);
-                String modifier = parts[0];
-                String baseButton = parts[1];
+                for (Map.Entry<String, String> bindingEntry : bindings.entrySet()) {
+                    String buttonName = bindingEntry.getKey();
+                    String spell = bindingEntry.getValue();
 
-                accountBindings.add(new BindingInfo(baseButton, modifier, spell));
+                    // Parse modifier and base button
+                    String[] parts = parseButtonName(buttonName);
+                    String modifier = parts[0];
+                    String baseButton = parts[1];
+
+                    accountBindings.add(new BindingInfo(baseButton, modifier, spell));
+                }
+
+                // Sort by modifier first (none, then Shift), then by button
+                accountBindings.sort((a, b) -> {
+                    int modifierCompare = a.getModifier().compareTo(b.getModifier());
+                    if (modifierCompare != 0) return modifierCompare;
+                    return a.getButton().compareTo(b.getButton());
+                });
+
+                restructured.put(identifier, accountBindings);
             }
-
-            // Sort by button name, then by modifier
-            accountBindings.sort((a, b) -> {
-                int buttonCompare = a.getButton().compareTo(b.getButton());
-                if (buttonCompare != 0) return buttonCompare;
-                return a.getModifier().compareTo(b.getModifier());
-            });
-
-            restructured.put(account, accountBindings);
         }
 
         return restructured;

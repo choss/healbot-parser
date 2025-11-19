@@ -144,6 +144,203 @@
             color: #666;
             font-size: 0.9em;
         }
+
+        /* Table of Contents Styles */
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .toc-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toc-header:hover {
+            background: #5a6fd8;
+        }
+
+        .toc-toggle {
+            font-size: 1.2em;
+            transition: transform 0.2s ease;
+        }
+
+        .toc-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .toc-content.open {
+            max-height: 1000px;
+        }
+
+        .toc-account {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .toc-account:last-child {
+            border-bottom: none;
+        }
+
+        .toc-account-name {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .toc-server {
+            padding: 8px 20px 8px 40px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .toc-server-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        .toc-server-header:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 4px;
+        }
+
+        .toc-server-name {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .toc-server-toggle {
+            font-size: 0.8em;
+            color: #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .toc-server-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .toc-server-content.collapsed {
+            max-height: 0;
+        }
+
+        .toc-character {
+            padding: 3px 20px 3px 60px;
+        }
+
+        .toc-character a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .toc-character a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .character-count {
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+
+        /* Sortable Table Styles */
+        .sortable-table {
+            margin-top: 15px;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .sortable:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .sort-indicator {
+            font-size: 0.8em;
+            margin-left: 5px;
+            opacity: 0.6;
+        }
+
+        .sortable.asc .sort-indicator:before {
+            content: "↑";
+        }
+
+        .sortable.desc .sort-indicator:before {
+            content: "↓";
+        }
+
+        .sortable.asc .sort-indicator,
+        .sortable.desc .sort-indicator {
+            opacity: 1;
+        }
+
+        /* Global Sort Controls */
+        .global-sort {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .global-sort h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .global-sort-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .global-sort-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s ease;
+        }
+
+        .global-sort-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .global-sort-btn.active {
+            background: #764ba2;
+        }
+    </style>
+    </style>
     </style>
 </head>
 <body>
@@ -153,25 +350,65 @@
             <p>Click-Casting Configuration Analysis</p>
         </header>
 
+        <!-- Table of Contents -->
+        <div class="toc" th:if="${not #maps.isEmpty(toc)}">
+            <div class="toc-header" onclick="toggleTOC()">
+                <span>Table of Contents</span>
+                <span class="toc-toggle">▼</span>
+            </div>
+            <div class="toc-content" id="tocContent">
+                <div th:each="accountEntry : ${toc}" class="toc-account">
+                    <div class="toc-account-name" th:text="${accountEntry.key}">Account Name</div>
+                    <div th:each="serverEntry : ${accountEntry.value}" class="toc-server">
+                        <div class="toc-server-header" th:onclick="'toggleServer(this)'">
+                            <span class="toc-server-name">
+                                <span th:text="${serverEntry.key}">Server Name</span>
+                                <span class="character-count" th:text="${#lists.size(serverEntry.value)}">5</span>
+                            </span>
+                            <span class="toc-server-toggle">▼</span>
+                        </div>
+                        <div class="toc-server-content">
+                            <div th:each="character : ${serverEntry.value}" class="toc-character">
+                                <a th:href="'#' + ${accountEntry.key} + '/' + ${serverEntry.key} + '/' + ${character}" 
+                                   th:text="${character}">Character Name</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Sort Controls -->
+        <div class="global-sort">
+            <h3>Sort All Tables</h3>
+            <div class="global-sort-buttons">
+                <button class="global-sort-btn" onclick="sortAllTables('button')">Sort by Button</button>
+                <button class="global-sort-btn" onclick="sortAllTables('modifier')">Sort by Modifier</button>
+                <button class="global-sort-btn" onclick="resetAllTables()">Reset to Default</button>
+            </div>
+        </div>
+
         <div class="content">
             <div th:if="${data.isEmpty()}" class="no-data">
                 <p>No HealBot configuration data found. Please check that the WoW directory contains WTF/Account/*/SavedVariables/HealBot*.lua files.</p>
             </div>
 
             <div th:each="entry : ${data}" class="section">
-                <h2 th:text="${entry.key}">Account/Character</h2>
+                <h2 th:id="${entry.key}" th:text="${entry.key}">Account/Character</h2>
                 <div class="account-section">
                     <h3>Click-Casting Bindings</h3>
-                    <table>
+                    <table class="sortable-table">
                         <thead>
                             <tr>
-                                <th>Button</th>
-                                <th>Modifier</th>
+                                <th class="sortable" onclick="sortTable(this, 'button')">Button <span class="sort-indicator">↕</span></th>
+                                <th class="sortable" onclick="sortTable(this, 'modifier')">Modifier <span class="sort-indicator">↕</span></th>
                                 <th>Spell/Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="binding : ${entry.value}">
+                            <tr th:each="binding : ${entry.value}" 
+                                th:data-button="${binding.button}" 
+                                th:data-modifier="${binding.modifier == '' ? 'none' : binding.modifier}">
                                 <td class="button-cell">
                                     <span class="binding" th:text="${binding.button}">Button</span>
                                 </td>
@@ -195,5 +432,165 @@
             <p>Parsing World of Warcraft HealBot configuration files</p>
         </footer>
     </div>
+
+    <script>
+        function toggleTOC() {
+            const tocContent = document.getElementById('tocContent');
+            const toggleIcon = document.querySelector('.toc-toggle');
+            
+            if (tocContent.classList.contains('open')) {
+                tocContent.classList.remove('open');
+                toggleIcon.textContent = '▼';
+            } else {
+                tocContent.classList.add('open');
+                toggleIcon.textContent = '▲';
+            }
+        }
+
+        function toggleServer(headerElement) {
+            const serverContent = headerElement.nextElementSibling;
+            const toggleIcon = headerElement.querySelector('.toc-server-toggle');
+            
+            if (serverContent.classList.contains('collapsed')) {
+                serverContent.classList.remove('collapsed');
+                toggleIcon.textContent = '▼';
+            } else {
+                serverContent.classList.add('collapsed');
+                toggleIcon.textContent = '▲';
+            }
+        }
+
+        // Custom button sort order: Left, Right, Middle, then numbered buttons
+        function getButtonSortValue(button) {
+            const buttonLower = button.toLowerCase();
+            if (buttonLower.includes('left')) return 1;
+            if (buttonLower.includes('right')) return 2;
+            if (buttonLower.includes('middle')) return 3;
+            
+            // Extract number from button names like "Button4", "Button5", etc.
+            const numberMatch = buttonLower.match(/(\d+)/);
+            if (numberMatch) {
+                return 4 + parseInt(numberMatch[1]);
+            }
+            
+            return 999; // Fallback for unknown buttons
+        }
+
+        // Custom modifier sort order: None, Alt, Ctrl, Shift, then combinations
+        function getModifierSortValue(modifier) {
+            if (modifier === 'none') return 1;
+            if (modifier === 'Alt') return 2;
+            if (modifier === 'Ctrl') return 3;
+            if (modifier === 'Shift') return 4;
+            if (modifier === 'Alt+Ctrl') return 5;
+            if (modifier === 'Alt+Shift') return 6;
+            if (modifier === 'Ctrl+Shift') return 7;
+            if (modifier === 'Alt+Ctrl+Shift') return 8;
+            return 999; // Fallback
+        }
+
+        function sortTable(header, sortBy) {
+            const table = header.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Remove sort classes from all headers in this table
+            table.querySelectorAll('.sortable').forEach(h => {
+                h.classList.remove('asc', 'desc');
+            });
+            
+            // Determine sort direction
+            let isAscending = !header.classList.contains('asc');
+            header.classList.toggle('asc', isAscending);
+            header.classList.toggle('desc', !isAscending);
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                if (sortBy === 'button') {
+                    aValue = getButtonSortValue(a.dataset.button);
+                    bValue = getButtonSortValue(b.dataset.button);
+                    
+                    // If button values are equal, sort by modifier as secondary sort
+                    if (aValue === bValue) {
+                        aValue = getModifierSortValue(a.dataset.modifier);
+                        bValue = getModifierSortValue(b.dataset.modifier);
+                    }
+                } else if (sortBy === 'modifier') {
+                    aValue = getModifierSortValue(a.dataset.modifier);
+                    bValue = getModifierSortValue(b.dataset.modifier);
+                    
+                    // If modifier values are equal, sort by button as secondary sort
+                    if (aValue === bValue) {
+                        aValue = getButtonSortValue(a.dataset.button);
+                        bValue = getButtonSortValue(b.dataset.button);
+                    }
+                }
+                
+                if (isAscending) {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
+                }
+            });
+            
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Initialize default sort (by modifier) on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.sortable-table').forEach(table => {
+                const modifierHeader = table.querySelector('th[onclick*="modifier"]');
+                if (modifierHeader) {
+                    sortTable(modifierHeader, 'modifier');
+                }
+            });
+        });
+
+        // Global sort functions
+        function sortAllTables(sortBy) {
+            // Update active button styling
+            document.querySelectorAll('.global-sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Sort all tables
+            document.querySelectorAll('.sortable-table').forEach(table => {
+                const targetHeader = table.querySelector(`th[onclick*="${sortBy}"]`);
+                if (targetHeader) {
+                    // Remove existing sort classes from all headers in this table
+                    table.querySelectorAll('.sortable').forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                    });
+                    // Apply ascending sort
+                    sortTable(targetHeader, sortBy);
+                }
+            });
+        }
+
+        function resetAllTables() {
+            // Update active button styling
+            document.querySelectorAll('.global-sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Reset all tables to default sort (by modifier)
+            document.querySelectorAll('.sortable-table').forEach(table => {
+                const modifierHeader = table.querySelector('th[onclick*="modifier"]');
+                if (modifierHeader) {
+                    // Remove existing sort classes
+                    table.querySelectorAll('.sortable').forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                    });
+                    // Apply default sort
+                    sortTable(modifierHeader, 'modifier');
+                }
+            });
+        }
+    </script>
 </body>
 </html>
