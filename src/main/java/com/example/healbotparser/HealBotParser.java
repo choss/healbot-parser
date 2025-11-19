@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -184,9 +185,7 @@ public class HealBotParser {
 
         String html = templateEngine.process("report", context);
 
-        try (FileWriter writer = new FileWriter(outputFile)) {
-            writer.write(html);
-        }
+        Files.writeString(Path.of(outputFile), html, StandardCharsets.UTF_8);
     }
 
     /**

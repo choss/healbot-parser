@@ -29,6 +29,7 @@ jobs:
         native-image --no-fallback `
           --enable-url-protocols=http,https `
           -H:+AddAllCharsets `
+          -Dfile.encoding=UTF-8 `
           -H:IncludeResources=templates/.*\.html `
           -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
 
@@ -58,4 +59,4 @@ jobs:
           healbot-parser.exe
           target/healbot-parser-0.1.0-SNAPSHOT.jar
         token: ${{ secrets.GITHUB_TOKEN }}
-        prerelease: true
+        prerelease: false
