@@ -7,7 +7,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>healbot-parser</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>HealBot SavedVariables Parser</name>
@@ -46,6 +46,14 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.example.healbotparser.Main</mainClass>
                 </configuration>
             </plugin>
             <plugin>

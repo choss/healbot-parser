@@ -10,7 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -18,7 +18,7 @@
             padding: 20px;
             line-height: 1.6;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -27,32 +27,32 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
-        
+
         header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
-        
+
         header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
         }
-        
+
         header p {
             font-size: 1.1em;
             opacity: 0.9;
         }
-        
+
         .content {
             padding: 30px;
         }
-        
+
         .section {
             margin-bottom: 30px;
         }
-        
+
         .section h2 {
             color: #667eea;
             font-size: 1.8em;
@@ -60,26 +60,26 @@
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
         }
-        
-        .info-box {
+
+        .account-section {
             background: #f8f9fa;
             border-left: 4px solid #667eea;
             padding: 15px;
             margin-bottom: 15px;
             border-radius: 5px;
         }
-        
-        .info-box h3 {
+
+        .account-section h3 {
             color: #764ba2;
             margin-bottom: 10px;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
         }
-        
+
         table th {
             background: #667eea;
             color: white;
@@ -87,16 +87,16 @@
             text-align: left;
             font-weight: 600;
         }
-        
+
         table td {
             padding: 12px;
             border-bottom: 1px solid #e0e0e0;
         }
-        
+
         table tr:hover {
             background: #f8f9fa;
         }
-        
+
         .binding {
             display: inline-block;
             background: #764ba2;
@@ -106,22 +106,43 @@
             margin-right: 5px;
             font-size: 0.9em;
         }
-        
+
+        .modifier-cell {
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .no-modifier {
+            color: #999;
+            font-style: italic;
+        }
+
+        .button-cell {
+            text-align: center;
+        }
+
+        .spell-cell {
+            padding-left: 15px;
+        }
+
+        .spell-link {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .spell-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
         footer {
             background: #f8f9fa;
             padding: 20px;
             text-align: center;
             color: #666;
             font-size: 0.9em;
-        }
-        
-        .demo-note {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -131,85 +152,44 @@
             <h1>HealBot Configuration Report</h1>
             <p>Click-Casting Configuration Analysis</p>
         </header>
-        
+
         <div class="content">
-            <div class="demo-note">
-                <strong>Note:</strong> This is a template demo. In the full implementation, this page will be populated 
-                with actual HealBot configuration data parsed from your SavedVariables files.
+            <div th:if="${data.isEmpty()}" class="no-data">
+                <p>No HealBot configuration data found. Please check that the WoW directory contains WTF/Account/*/SavedVariables/HealBot*.lua files.</p>
             </div>
-            
-            <div class="section">
-                <h2>Account Information</h2>
-                <div class="info-box">
-                    <h3>Account Details</h3>
-                    <p><strong>Account Name:</strong> <span th:text="${accountName ?: 'Example Account'}">Example Account</span></p>
-                    <p><strong>Realm:</strong> <span th:text="${realmName ?: 'Example Realm'}">Example Realm</span></p>
-                    <p><strong>Character:</strong> <span th:text="${characterName ?: 'Example Character'}">Example Character</span></p>
-                </div>
-            </div>
-            
-            <div class="section">
-                <h2>Click-Casting Bindings</h2>
-                <div class="info-box">
-                    <h3>Mouse Button Configurations</h3>
-                    <p>The following table shows the configured click-casting bindings for HealBot frames:</p>
-                    
+
+            <div th:each="entry : ${data}" class="section">
+                <h2 th:text="${entry.key}">Account/Character</h2>
+                <div class="account-section">
+                    <h3>Click-Casting Bindings</h3>
                     <table>
                         <thead>
                             <tr>
-                                <th>Button Combination</th>
-                                <th>Action Type</th>
-                                <th>Spell/Item</th>
-                                <th>Description</th>
+                                <th>Button</th>
+                                <th>Modifier</th>
+                                <th>Spell/Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><span class="binding">Left Click</span></td>
-                                <td>Spell</td>
-                                <td>Flash Heal</td>
-                                <td>Quick single-target heal</td>
+                            <tr th:each="binding : ${entry.value}">
+                                <td class="button-cell">
+                                    <span class="binding" th:text="${binding.button}">Button</span>
+                                </td>
+                                <td class="modifier-cell">
+                                    <span th:if="${binding.modifier != ''}" th:text="${binding.modifier}">Shift</span>
+                                    <span th:if="${binding.modifier == ''}" class="no-modifier">None</span>
+                                </td>
+                                <td class="spell-cell" th:utext="${binding.spell}">Spell</td>
                             </tr>
-                            <tr>
-                                <td><span class="binding">Shift + Left Click</span></td>
-                                <td>Spell</td>
-                                <td>Greater Heal</td>
-                                <td>Powerful slow heal</td>
-                            </tr>
-                            <tr>
-                                <td><span class="binding">Right Click</span></td>
-                                <td>Spell</td>
-                                <td>Renew</td>
-                                <td>Heal over time effect</td>
-                            </tr>
-                            <tr>
-                                <td><span class="binding">Middle Click</span></td>
-                                <td>Spell</td>
-                                <td>Prayer of Mending</td>
-                                <td>Bouncing heal</td>
-                            </tr>
-                            <tr>
-                                <td><span class="binding">Ctrl + Left Click</span></td>
-                                <td>Spell</td>
-                                <td>Dispel Magic</td>
-                                <td>Remove harmful magic effects</td>
+                            <tr th:if="${#lists.isEmpty(entry.value)}">
+                                <td colspan="3" class="no-data">No bindings configured for this account/character.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-            
-            <div class="section">
-                <h2>Configuration Summary</h2>
-                <div class="info-box">
-                    <h3>Statistics</h3>
-                    <p><strong>Total Bindings:</strong> <span th:text="${bindingCount ?: '5'}">5</span></p>
-                    <p><strong>Spells Configured:</strong> <span th:text="${spellCount ?: '5'}">5</span></p>
-                    <p><strong>Items Configured:</strong> <span th:text="${itemCount ?: '0'}">0</span></p>
-                </div>
-            </div>
         </div>
-        
+
         <footer>
             <p>Generated by HealBot SavedVariables Parser v1.0</p>
             <p>Parsing World of Warcraft HealBot configuration files</p>

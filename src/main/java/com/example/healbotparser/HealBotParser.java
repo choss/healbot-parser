@@ -1,7 +1,31 @@
 package com.example.healbotparser;
 
+import org.luaj.vm2.Globals;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.jse.JsePlatform;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Parser for HealBot SavedVariables files.
@@ -9,121 +33,241 @@ import java.nio.file.Path;
  * from World of Warcraft SavedVariables files.
  */
 public class HealBotParser {
-    
+
+    // HealBot configuration constants
+    private static final String HEALBOT_CONFIG_SPELLS = "HealBot_Config_Spells";
+    private static final String ENABLED_KEY_COMBO = "EnabledKeyCombo";
+
+    /**
+     * Creates a friendly identifier from an account path.
+     * Extracts the last directory name as the identifier.
+     */
+    private static String friendlyIdentifier(Path accountPath) {
+        return accountPath.getFileName().toString();
+    }
+
     /**
      * Parses HealBot SavedVariables from the specified WoW directory.
-     * 
+     * Traverses WTF/Account/* and finds SavedVariables/HealBot*.lua files.
+     *
      * @param wowDirectory The root directory of the World of Warcraft installation
+     * @return Map of identifier to button-spell mappings
      * @throws IOException if file operations fail
      */
-    public void parse(Path wowDirectory) throws IOException {
-        System.out.println("  [Parser] Starting parse operation...");
-        
-        // TODO: Implement file traversal logic
-        // - Locate WTF/Account directories
-        // - Find HealBot.lua files in SavedVariables
-        // - Read file contents
-        traverseWowDirectory(wowDirectory);
-        
-        // TODO: Implement Lua parsing logic
-        // - Use LuaJ to parse the .lua files
-        // - Extract relevant configuration data
-        // - Structure data for report generation
-        parseLuaFiles();
-        
-        System.out.println("  [Parser] Parse operation complete (stub).");
+    public Map<String, Map<String, String>> parseDirectory(Path wowDirectory) throws IOException {
+        Map<String, Map<String, String>> result = new HashMap<>();
+
+        Path wtfPath = wowDirectory.resolve("WTF");
+        if (!Files.exists(wtfPath)) {
+            System.out.println("WTF directory not found at " + wtfPath);
+            return result;
+        }
+
+        Path accountPath = wtfPath.resolve("Account");
+        if (!Files.exists(accountPath)) {
+            System.out.println("Account directory not found at " + accountPath);
+            return result;
+        }
+
+        try (Stream<Path> accounts = Files.list(accountPath)) {
+            accounts.filter(Files::isDirectory).forEach(account -> {
+                try {
+                    Path savedVars = account.resolve("SavedVariables");
+                    if (Files.exists(savedVars)) {
+                        try (Stream<Path> files = Files.list(savedVars)) {
+                            files.filter(p -> p.getFileName().toString().startsWith("HealBot") && p.toString().endsWith(".lua"))
+                                .forEach(file -> {
+                                    String identifier = friendlyIdentifier(account);
+                                    Map<String, String> spells = parseHealBotFile(file);
+                                    if (!spells.isEmpty()) {
+                                        result.put(identifier, spells);
+                                    }
+                                });
+                        }
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error processing account " + account + ": " + e.getMessage());
+                }
+            });
+        }
+
+        return result;
     }
-    
+
     /**
-     * Traverses the WoW directory structure to locate HealBot SavedVariables files.
-     * 
-     * @param wowDirectory The root directory of the World of Warcraft installation
-     * @throws IOException if directory traversal fails
+     * Parses a single HealBot.lua file using LuaJ to extract EnabledKeyCombo.
+     *
+     * @param file Path to the HealBot.lua file
+     * @return Map of button to spell, or empty map on failure
      */
-    private void traverseWowDirectory(Path wowDirectory) throws IOException {
-        System.out.println("    [Traversal] Scanning WoW directory structure...");
-        
-        // TODO: Implement directory traversal
-        // Expected structure:
-        // WoW_Directory/
-        //   WTF/
-        //     Account/
-        //       <AccountName>/
-        //         SavedVariables/
-        //           HealBot.lua
-        //         <RealmName>/
-        //           <CharacterName>/
-        //             SavedVariables/
-        //               HealBot.lua
-        
-        System.out.println("    [Traversal] Directory scan complete (stub).");
+    public Map<String, String> parseHealBotFile(Path file) {
+        Map<String, String> spells = new HashMap<>();
+        try {
+            Globals globals = JsePlatform.standardGlobals();
+            LuaValue chunk = globals.loadfile(file.toString());
+            chunk.call();
+
+            LuaValue config = globals.get(HEALBOT_CONFIG_SPELLS);
+            if (!config.isnil()) {
+                LuaValue enabledKeyCombo = config.get(ENABLED_KEY_COMBO);
+                if (enabledKeyCombo.istable()) {
+                    LuaValue k = LuaValue.NIL;
+                    while (true) {
+                        Varargs n = enabledKeyCombo.next(k);
+                        if (n.isnil(1)) break;
+                        k = n.arg1();
+                        LuaValue v = n.arg(2);
+                        if (k.isstring() && v.isstring()) {
+                            String rawValue = v.tojstring();
+                            String humanReadableValue = convertToHumanReadable(rawValue);
+                            spells.put(k.tojstring(), humanReadableValue);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing " + file + ": " + e.getMessage());
+        }
+        return spells;
     }
-    
+
     /**
-     * Parses Lua files using LuaJ library to extract configuration data.
-     * 
-     * @throws IOException if Lua parsing fails
+     * Generates an HTML report using Thymeleaf template.
+     *
+     * @param data The parsed data
+     * @param outputFile Path to write the HTML report
+     * @throws IOException if writing fails
      */
-    private void parseLuaFiles() throws IOException {
-        System.out.println("    [Lua Parser] Parsing Lua configuration files...");
-        
-        // TODO: Implement LuaJ parsing
-        // - Initialize LuaJ globals
-        // - Load and execute each HealBot.lua file
-        // - Extract click-casting bindings
-        // - Extract spell configurations
-        // - Store parsed data in structured format
-        
-        System.out.println("    [Lua Parser] Lua parsing complete (stub).");
+    public void generateHtmlReport(Map<String, Map<String, String>> data, String outputFile) throws IOException {
+        TemplateEngine templateEngine = new TemplateEngine();
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix("/templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCacheable(false);
+        templateEngine.setTemplateResolver(templateResolver);
+
+        Context context = new Context();
+        context.setVariable("data", restructureDataForDisplay(data));
+
+        String html = templateEngine.process("report", context);
+
+        try (FileWriter writer = new FileWriter(outputFile)) {
+            writer.write(html);
+        }
     }
-    
+
     /**
-     * Generates an HTML report from the parsed HealBot configuration data.
-     * 
-     * @throws IOException if report generation fails
+     * Restructures the data to separate modifiers from base buttons.
+     * Creates a list of binding objects for each account.
      */
-    public void generateReport() throws IOException {
-        System.out.println("  [Report Generator] Generating HTML report...");
-        
-        // TODO: Implement HTML report generation
-        // - Initialize Thymeleaf template engine
-        // - Load the report template
-        // - Populate template with parsed data
-        // - Write HTML output to file
-        prepareTemplateData();
-        renderTemplate();
-        
-        System.out.println("  [Report Generator] HTML report generated (stub).");
+    private Map<String, List<BindingInfo>> restructureDataForDisplay(Map<String, Map<String, String>> data) {
+        Map<String, List<BindingInfo>> restructured = new HashMap<>();
+
+        for (Map.Entry<String, Map<String, String>> accountEntry : data.entrySet()) {
+            String account = accountEntry.getKey();
+            Map<String, String> bindings = accountEntry.getValue();
+            List<BindingInfo> accountBindings = new ArrayList<>();
+
+            for (Map.Entry<String, String> bindingEntry : bindings.entrySet()) {
+                String buttonName = bindingEntry.getKey();
+                String spell = bindingEntry.getValue();
+
+                // Parse modifier and base button
+                String[] parts = parseButtonName(buttonName);
+                String modifier = parts[0];
+                String baseButton = parts[1];
+
+                accountBindings.add(new BindingInfo(baseButton, modifier, spell));
+            }
+
+            // Sort by button name, then by modifier
+            accountBindings.sort((a, b) -> {
+                int buttonCompare = a.getButton().compareTo(b.getButton());
+                if (buttonCompare != 0) return buttonCompare;
+                return a.getModifier().compareTo(b.getModifier());
+            });
+
+            restructured.put(account, accountBindings);
+        }
+
+        return restructured;
     }
-    
+
     /**
-     * Prepares the data structure for Thymeleaf template rendering.
+     * Parses a button name to separate modifier from base button.
+     * Returns array where [0] is modifier (empty string if none) and [1] is base button.
      */
-    private void prepareTemplateData() {
-        System.out.println("    [Template] Preparing template data...");
-        
-        // TODO: Implement data preparation
-        // - Create model objects for Thymeleaf context
-        // - Organize click-casting configurations
-        // - Format spell and binding information
-        
-        System.out.println("    [Template] Template data prepared (stub).");
+    private String[] parseButtonName(String buttonName) {
+        // Common modifiers in order of length (longest first to avoid partial matches)
+        String[] modifiers = {"Shift", "Ctrl", "Alt"};
+
+        for (String modifier : modifiers) {
+            if (buttonName.startsWith(modifier)) {
+                String baseButton = buttonName.substring(modifier.length());
+                return new String[]{modifier, baseButton};
+            }
+        }
+
+        // No modifier found
+        return new String[]{"", buttonName};
     }
-    
+
     /**
-     * Renders the Thymeleaf template to generate the final HTML report.
-     * 
-     * @throws IOException if template rendering fails
+     * Converts HealBot internal codes to human-readable names.
+     *
+     * @param rawValue The raw value from HealBot configuration
+     * @return Human-readable representation
      */
-    private void renderTemplate() throws IOException {
-        System.out.println("    [Template] Rendering Thymeleaf template...");
-        
-        // TODO: Implement Thymeleaf rendering
-        // - Set up Thymeleaf TemplateEngine
-        // - Load report.html template
-        // - Process template with context data
-        // - Write output to file (e.g., healbot-report.html)
-        
-        System.out.println("    [Template] Template rendering complete (stub).");
+    private String convertToHumanReadable(String rawValue) {
+        if (rawValue == null || rawValue.isEmpty()) {
+            return rawValue;
+        }
+
+        // Handle command codes (C:code)
+        if (rawValue.startsWith("C:")) {
+            String commandCode = rawValue.substring(2);
+            return switch (commandCode) {
+                case "A" -> "Assist";
+                case "F" -> "Focus";
+                case "M" -> "Menu";
+                case "T" -> "MainTank";
+                case "TM" -> "MainAssist";
+                case "S" -> "Stop";
+                case "TL" -> "Tell";
+                default -> "Command: " + commandCode;
+            };
+        }
+
+        // Handle spell codes (S:spellId^spellName)
+        if (rawValue.startsWith("S:")) {
+            String spellPart = rawValue.substring(2);
+            int caretIndex = spellPart.indexOf('^');
+            if (caretIndex > 0) {
+                // Format: S:spellId^spellName
+                String spellId = spellPart.substring(0, caretIndex);
+                String spellName = spellPart.substring(caretIndex + 1);
+                return "<a href=\"https://www.wowhead.com/spell=" + spellId + "\" target=\"_blank\" class=\"spell-link\">🔗 " + spellName + "</a>";
+            } else {
+                // Format: S:spellId:spellName or just S:spellId
+                int colonIndex = spellPart.indexOf(':');
+                if (colonIndex > 0) {
+                    String spellId = spellPart.substring(0, colonIndex);
+                    String spellName = spellPart.substring(colonIndex + 1);
+                    return "<a href=\"https://www.wowhead.com/spell=" + spellId + "\" target=\"_blank\" class=\"spell-link\">🔗 " + spellName + "</a>";
+                } else {
+                    // Just spellId
+                    return "<a href=\"https://www.wowhead.com/spell=" + spellPart + "\" target=\"_blank\" class=\"spell-link\">🔗 Spell: " + spellPart + "</a>";
+                }
+            }
+        }
+
+        // Handle item codes (I:itemId)
+        if (rawValue.startsWith("I:")) {
+            return "Item: " + rawValue.substring(2);
+        }
+
+        // Return as-is for other values
+        return rawValue;
     }
 }
