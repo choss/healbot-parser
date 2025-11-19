@@ -40,15 +40,18 @@ public class HealBotParser {
 
     /**
      * Creates a friendly identifier from an account path.
-     * Extracts the last directory name as the identifier.
+     * Now includes account/server/character information.
      */
-    private static String friendlyIdentifier(Path accountPath) {
-        return accountPath.getFileName().toString();
+    private static String friendlyIdentifier(Path accountPath, Path serverPath, Path characterPath) {
+        String account = accountPath.getFileName().toString();
+        String server = serverPath.getFileName().toString();
+        String character = characterPath.getFileName().toString();
+        return account + "/" + server + "/" + character;
     }
 
     /**
      * Parses HealBot SavedVariables from the specified WoW directory.
-     * Traverses WTF/Account/* and finds SavedVariables/HealBot*.lua files.
+     * Traverses WTF/Account/{account}/{server}/{character}/SavedVariables/HealBot*.lua files.
      *
      * @param wowDirectory The root directory of the World of Warcraft installation
      * @return Map of identifier to button-spell mappings
@@ -72,18 +75,36 @@ public class HealBotParser {
         try (Stream<Path> accounts = Files.list(accountPath)) {
             accounts.filter(Files::isDirectory).forEach(account -> {
                 try {
-                    Path savedVars = account.resolve("SavedVariables");
-                    if (Files.exists(savedVars)) {
-                        try (Stream<Path> files = Files.list(savedVars)) {
-                            files.filter(p -> p.getFileName().toString().startsWith("HealBot") && p.toString().endsWith(".lua"))
-                                .forEach(file -> {
-                                    String identifier = friendlyIdentifier(account);
-                                    Map<String, String> spells = parseHealBotFile(file);
-                                    if (!spells.isEmpty()) {
-                                        result.put(identifier, spells);
-                                    }
-                                });
-                        }
+                    // For each account, look for server directories
+                    try (Stream<Path> servers = Files.list(account)) {
+                        servers.filter(Files::isDirectory).forEach(server -> {
+                            try {
+                                // For each server, look for character directories
+                                try (Stream<Path> characters = Files.list(server)) {
+                                    characters.filter(Files::isDirectory).forEach(character -> {
+                                        try {
+                                            Path savedVars = character.resolve("SavedVariables");
+                                            if (Files.exists(savedVars)) {
+                                                try (Stream<Path> files = Files.list(savedVars)) {
+                                                    files.filter(p -> p.getFileName().toString().startsWith("HealBot") && p.toString().endsWith(".lua"))
+                                                        .forEach(file -> {
+                                                            String identifier = friendlyIdentifier(account, server, character);
+                                                            Map<String, String> spells = parseHealBotFile(file);
+                                                            if (!spells.isEmpty()) {
+                                                                result.put(identifier, spells);
+                                                            }
+                                                        });
+                                                }
+                                            }
+                                        } catch (IOException e) {
+                                            System.err.println("Error processing character " + character + ": " + e.getMessage());
+                                        }
+                                    });
+                                }
+                            } catch (IOException e) {
+                                System.err.println("Error processing server " + server + ": " + e.getMessage());
+                            }
+                        });
                     }
                 } catch (IOException e) {
                     System.err.println("Error processing account " + account + ": " + e.getMessage());
