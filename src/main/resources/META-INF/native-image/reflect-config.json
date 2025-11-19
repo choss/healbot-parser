@@ -119,6 +119,18 @@
     }
   },
   {
+    "name": "org.thymeleaf.expression.Lists",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true,
+    "condition": {
+      "typeReachable": "org.thymeleaf.standard.expression.OGNLVariableExpressionEvaluator"
+    }
+  },
+  {
     "name": "org.thymeleaf.expression.Maps",
     "allPublicMethods": true,
     "condition": {
