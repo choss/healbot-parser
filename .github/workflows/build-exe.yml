@@ -37,13 +37,18 @@ jobs:
           exit 1
         }
 
+    - name: Delete existing snapshot release (if any)
+      run: |
+        gh release delete snapshot-${{ github.run_number }}-${{ github.sha }} --yes || true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Create snapshot release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        tag_name: snapshot
+        tag_name: snapshot-${{ github.run_number }}-${{ github.sha }}
         name: Snapshot Release
         body: Latest snapshot build from ${{ github.sha }}
         files: healbot-parser.exe
         token: ${{ secrets.GITHUB_TOKEN }}
-      env:
-        GITHUB_REPOSITORY: ${{ github.repository }}
+        prerelease: true
