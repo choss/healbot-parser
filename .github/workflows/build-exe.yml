@@ -29,6 +29,7 @@ jobs:
         native-image --no-fallback `
           --enable-url-protocols=http,https `
           -H:+AddAllCharsets `
+          -H:IncludeResources=templates/.*\.html `
           -jar target/healbot-parser-0.1.0-SNAPSHOT.jar healbot-parser
 
     - name: Verify executable
