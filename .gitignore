@@ -41,7 +41,7 @@ Thumbs.db
 
 # Generated reports
 healbot-report.html
-betterwardrobe-report.html
+/betterwardrobe-report.html
 
 # Test data (local development only)
 test-data2/

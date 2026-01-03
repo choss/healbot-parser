@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetterWardrobe Outfits Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin: 0;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .back-to-toc {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            padding: 5px 10px;
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .back-to-toc:hover {
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+        }
+
+        .outfit-container {
+            background: #f8f9fa;
+            border-left: 4px solid #764ba2;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .outfit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .outfit-name {
+            color: #764ba2;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .outfit-meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .slot-name {
+            font-weight: 600;
+            color: #555;
+            min-width: 100px;
+        }
+
+        .item-link {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .item-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .empty-slot {
+            color: #999;
+            font-style: italic;
+        }
+
+        .enchant-info {
+            color: #28a745;
+            font-size: 0.85em;
+            margin-left: 8px;
+        }
+
+        .item-ids-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #666;
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+
+        /* Export section styles */
+        .export-section {
+            margin-top: 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .export-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.2s ease;
+        }
+
+        .export-header:hover {
+            background: #e9ecef;
+        }
+
+        .export-title {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .export-toggle {
+            font-size: 1.2em;
+            color: #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .export-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .export-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .export-content.open {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .export-format {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .export-format:last-child {
+            border-bottom: none;
+        }
+
+        .export-format-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .export-code {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .copy-btn:active {
+            background: #4a5fc8;
+        }
+
+        /* Table of Contents Styles */
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .toc-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toc-header:hover {
+            background: #5a6fd8;
+        }
+
+        .toc-toggle {
+            font-size: 1.2em;
+            transition: transform 0.2s ease;
+        }
+
+        .toc-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .toc-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .toc-content.open {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .toc-account {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .toc-account:last-child {
+            border-bottom: none;
+        }
+
+        .toc-account-name {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .toc-realm {
+            padding: 8px 20px 8px 40px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .toc-realm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        .toc-realm-header:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 4px;
+        }
+
+        .toc-realm-name {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .toc-realm-toggle {
+            font-size: 0.8em;
+            color: #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .toc-realm-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .toc-realm-content {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .toc-realm-content.collapsed {
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .toc-character {
+            padding: 3px 20px 3px 60px;
+        }
+
+        .toc-character a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .toc-character a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .character-count {
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+    <script>const whTooltips = {colorLinks: true, iconizeLinks: true, renameLinks: true, iconSize: 'medium'};</script>
+    <script src="https://wow.zamimg.com/js/tooltips.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 BetterWardrobe Outfits Report</h1>
+            <p>Saved Transmog Sets & Outfits</p>
+        </header>
+
+        <!-- Table of Contents -->
+        <div class="toc" th:if="${not #maps.isEmpty(toc)}">
+            <div class="toc-header" onclick="toggleTOC()">
+                <span>📖 Table of Contents</span>
+                <span class="toc-toggle" id="mainTocToggle">▼</span>
+            </div>
+            <div class="toc-content" id="mainTocContent">
+                <div th:each="accountEntry : ${toc}" class="toc-account">
+                    <div class="toc-account-name" th:text="${accountEntry.key}"></div>
+                    <div th:each="realmEntry : ${accountEntry.value}" class="toc-realm">
+                        <div class="toc-realm-header" th:data-realm-id="${accountEntry.key} + '-' + ${realmEntry.key}" onclick="toggleRealmByElement(this)">
+                            <span>
+                                <span class="toc-realm-name" th:text="${realmEntry.key}"></span>
+                                <span class="character-count" th:text="${#lists.size(realmEntry.value)}"></span>
+                            </span>
+                            <span class="toc-realm-toggle" th:id="'toggle-' + ${accountEntry.key} + '-' + ${realmEntry.key}">▼</span>
+                        </div>
+                        <div class="toc-realm-content" th:id="'realm-' + ${accountEntry.key} + '-' + ${realmEntry.key}">
+                            <div th:each="character : ${realmEntry.value}" class="toc-character">
+                                <a th:href="'#' + ${accountEntry.key} + '-' + ${realmEntry.key} + '-' + ${character}" 
+                                   th:text="${character}"></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Character Sections -->
+            <div th:each="entry : ${data}" class="section">
+                <div th:with="parts=${#strings.arraySplit(entry.key, '/')}">
+                    <div class="section-header" th:id="${parts[0] + '-' + parts[1] + '-' + parts[2]}">
+                        <h2>
+                            <span th:text="${parts[2]}"></span>
+                            <span style="color: #999; font-size: 0.7em;" th:text="' @ ' + ${parts[1]}"></span>
+                            <span style="color: #bbb; font-size: 0.6em;" th:text="' (' + ${parts[0]} + ')'"></span>
+                        </h2>
+                        <a href="#mainTocContent" class="back-to-toc">↑ Back to TOC</a>
+                    </div>
+
+                    <!-- Outfits for this character -->
+                    <div th:each="outfit, iterStat : ${entry.value}" class="outfit-container">
+                        <div class="outfit-header">
+                            <div>
+                                <div class="outfit-name" th:text="${outfit.outfitName}"></div>
+                                <div class="outfit-meta">
+                                    <span th:text="'Outfit ' + ${iterStat.count} + ' of ' + ${#lists.size(entry.value)}"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Outfit slots table -->
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Slot</th>
+                                    <th>Item</th>
+                                    <th>Source ID</th>
+                                    <th>All Item IDs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="slotName : ${slotNames}">
+                                    <td class="slot-name" th:text="${slotName}"></td>
+                                    <td th:with="slotData=${outfit.slots[slotName]}">
+                                        <!-- Show item link if we have itemId, otherwise show source link -->
+                                        <span th:if="${slotData != null and !slotData.isEmpty() and slotData.itemId != null}"
+                                              th:utext="${converter.createItemLink(slotData.itemId, slotData.itemName)}"></span>
+                                        <span th:if="${slotData != null and !slotData.isEmpty() and slotData.itemId == null}"
+                                              th:utext="${converter.createSourceLink(slotData.sourceId)}"></span>
+                                        <span th:if="${slotData == null or slotData.isEmpty()}" class="empty-slot">-</span>
+                                        <span th:if="${slotData != null and slotData.enchantId != null and slotData.enchantId > 0}"
+                                              class="enchant-info" th:text="'(Illusion: ' + ${slotData.enchantId} + ')'"></span>
+                                    </td>
+                                    <td th:with="slotData=${outfit.slots[slotName]}">
+                                        <span th:if="${slotData != null and !slotData.isEmpty()}" th:text="${slotData.sourceId}"></span>
+                                        <span th:if="${slotData == null or slotData.isEmpty()}" class="empty-slot">-</span>
+                                    </td>
+                                    <td th:with="slotData=${outfit.slots[slotName]}" class="item-ids-cell">
+                                        <span th:if="${slotData != null and !slotData.isEmpty()}" 
+                                              th:text="${converter.getItemIdsForSource(slotData.sourceId)}"></span>
+                                        <span th:if="${slotData == null or slotData.isEmpty()}" class="empty-slot">-</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Import/Export Section -->
+                        <div class="export-section">
+                            <div class="export-header" th:data-outfit-id="${parts[2]} + '-' + ${iterStat.index}" onclick="toggleExportByElement(this)">
+                                <span class="export-title">📋 Import/Export Codes</span>
+                                <span class="export-toggle" th:id="'export-toggle-' + ${parts[2]} + '-' + ${iterStat.index}">▼</span>
+                            </div>
+                            <div class="export-content" th:id="'export-content-' + ${parts[2]} + '-' + ${iterStat.index}">
+                                <!-- Blizzard Format -->
+                                <div class="export-format">
+                                    <div class="export-format-title">Blizzard-Compatible Format</div>
+                                    <div class="export-code" th:id="'blizzard-export-' + ${parts[2]} + '-' + ${iterStat.index}" 
+                                         th:text="${converter.createBlizzardExport(outfit)}"></div>
+                                    <button class="copy-btn" th:data-target-id="'blizzard-export-' + ${parts[2]} + '-' + ${iterStat.index}"
+                                            onclick="copyToClipboardByElement(this)">
+                                        Copy Blizzard Format
+                                    </button>
+                                </div>
+                                <!-- WowHead Dressing Room -->
+                                <div class="export-format">
+                                    <div class="export-format-title">WowHead Dressing Room</div>
+                                    <div class="export-code" th:id="'dressing-room-' + ${parts[2]} + '-' + ${iterStat.index}">
+                                        <a th:href="${converter.createDressingRoomLink(outfit)}" 
+                                           target="_blank" 
+                                           class="item-link"
+                                           th:text="${converter.createDressingRoomLink(outfit)}"></a>
+                                    </div>
+                                    <button class="copy-btn" th:data-target-id="'dressing-room-' + ${parts[2]} + '-' + ${iterStat.index}"
+                                            onclick="copyToClipboardByElement(this)">
+                                        Copy Dressing Room Link
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No data message -->
+            <div th:if="${#maps.isEmpty(data)}" style="text-align: center; padding: 40px; color: #999;">
+                <p style="font-size: 1.2em;">No BetterWardrobe outfit data found.</p>
+                <p style="font-size: 0.9em; margin-top: 10px;">Make sure you have BetterWardrobe installed and have saved some outfits.</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Generated by HealBot Parser with BetterWardrobe Support</p>
+            <p style="margin-top: 5px; font-size: 0.85em;">Powered by Thymeleaf • WowHead Tooltips Enabled</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleTOC() {
+            const content = document.getElementById('mainTocContent');
+            const toggle = document.getElementById('mainTocToggle');
+            content.classList.toggle('open');
+            toggle.classList.toggle('open');
+        }
+
+        function toggleRealm(realmId) {
+            const content = document.getElementById('realm-' + realmId);
+            const toggle = document.getElementById('toggle-' + realmId);
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('open');
+        }
+
+        function toggleRealmByElement(element) {
+            const realmId = element.getAttribute('data-realm-id');
+            toggleRealm(realmId);
+        }
+
+        function toggleExport(outfitId) {
+            const content = document.getElementById('export-content-' + outfitId);
+            const toggle = document.getElementById('export-toggle-' + outfitId);
+            content.classList.toggle('open');
+            toggle.classList.toggle('open');
+        }
+
+        function toggleExportByElement(element) {
+            const outfitId = element.getAttribute('data-outfit-id');
+            toggleExport(outfitId);
+        }
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Find the button that was clicked
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+         
+
+        function copyToClipboardByElement(buttonElement) {
+            const targetId = buttonElement.getAttribute('data-target-id');
+            const element = document.getElementById(targetId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✓ Copied!';
+                buttonElement.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                    buttonElement.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }       button.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        // Auto-open first realm in TOC if present
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstRealmContent = document.querySelector('.toc-realm-content');
+            if (firstRealmContent) {
+                firstRealmContent.classList.remove('collapsed');
+                const realmId = firstRealmContent.id.replace('realm-', '');
+                const toggle = document.getElementById('toggle-' + realmId);
+                if (toggle) {
+                    toggle.classList.add('open');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
