@@ -1,25 +1,37 @@
 # HealBot SavedVariables Parser
 
-A tool for parsing World of Warcraft HealBot addon configuration files and generating comprehensive HTML reports of your click-casting setups.
+A tool for parsing World of Warcraft addon configuration files and generating comprehensive HTML reports. Currently supports:
+- **HealBot**: Click-casting configurations and keybindings
+- **BetterWardrobe**: Transmog outfit collections
 
 *Note: This app and documentation were exclusively vibe coded, but tested and works for my setup.*
 
 ## What It Does
 
-This parser analyzes your HealBot SavedVariables files to extract and organize your click-casting configurations. It automatically searches your World of Warcraft installation directory and generates a beautiful, interactive HTML report showing:
+This parser analyzes your addon SavedVariables files to extract and organize your configurations. It automatically searches your World of Warcraft installation directory and generates beautiful, interactive HTML reports.
 
+### HealBot Report
 - **All your characters** across different accounts and servers
 - **Multiple HealBot files** per character (HealBot.lua and HealBot_Data.lua)
 - **Click-casting bindings** organized by mouse button and modifier keys
 - **Spell/action details** with Wowhead links for easy reference
 
+### BetterWardrobe Report
+- **Saved transmog outfits** for all characters
+- **Complete outfit details** with all 12 equipment slots (Head, Shoulder, Chest, etc.)
+- **WowHead integration** with item links and tooltips
+- **Item ID resolution** using appearance database (155K+ mappings)
+- **Export formats** including Blizzard-compatible strings and WowHead Dressing Room links
+
 ## Features
 
-- 📊 **Comprehensive Reports**: View all your HealBot configurations in one place
+- 📊 **Comprehensive Reports**: View all your addon configurations in one place
 - 🎯 **Multi-Character Support**: Handles multiple accounts, servers, and characters
-- 📁 **Multiple Files**: Processes both HealBot.lua and HealBot_Data.lua files
+- 📁 **Multiple Addons**: Processes HealBot and BetterWardrobe SavedVariables
 - 🔍 **Interactive Tables**: Sortable tables with filtering capabilities
-- 🌐 **Wowhead Integration**: Direct links to spell information
+- 🌐 **Wowhead Integration**: Direct links to spell and item information with tooltips
+- 💎 **Transmog Outfits**: View all saved BetterWardrobe outfits with complete gear details
+- 🔗 **Export Options**: Blizzard-compatible export strings and WowHead Dressing Room links
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 - ⚡ **Fast Native Version**: Available as a native executable for Windows
 
@@ -74,7 +86,11 @@ healbot-parser.exe [wow-directory] [output-file]
     - **Native version**: Automatically searches for your World of Warcraft installation, or uses the current directory if not found
 - `output-file`: Name of the output HTML file (optional, defaults to `healbot-report.html`)
 
-The HTML report is generated in the same directory as the executable or JAR file.
+**Note**: The parser generates two separate reports:
+- `healbot-report.html` - HealBot click-casting configurations
+- `betterwardrobe-report.html` - BetterWardrobe transmog outfits
+
+Both HTML reports are generated in the same directory as the executable or JAR file.
 
 ### Examples
 
@@ -98,7 +114,7 @@ java -jar healbot-parser-0.1.0-SNAPSHOT.jar "C:\Program Files (x86)\World of War
 ```bash
 healbot-parser.exe
 ```
-This will automatically find your World of Warcraft installation and generate `healbot-report.html` in the same directory as the executable.
+This will automatically find your World of Warcraft installation and generate `healbot-report.html` and `betterwardrobe-report.html` in the same directory as the executable.
 
 #### Example 5: Using native executable with specific path
 ```bash
@@ -107,13 +123,15 @@ healbot-parser.exe "C:\Program Files (x86)\World of Warcraft"
 
 ### Finding Your World of Warcraft Directory
 
-Your World of Warcraft directory typically contains folders like `_retail_`, `_classic_`, etc. The parser will automatically find HealBot files in:
+Your World of Warcraft directory typically contains folders like `_retail_`, `_classic_`, etc. The parser will automatically find addon SavedVariables files in:
 
 ```
 World of Warcraft/
 ├── WTF/
 │   └── Account/
 │       └── [Account Name]/
+│           ├── SavedVariables/
+│           │   └── BetterWardrobe.lua
 │           └── [Server Name]/
 │               └── [Character Name]/
 │                   └── SavedVariables/
@@ -123,14 +141,16 @@ World of Warcraft/
 
 ## Output
 
-The parser generates an HTML report in the same directory as the executable or JAR file, containing:
+The parser generates two separate HTML reports in the same directory as the executable or JAR file:
 
-### Table of Contents
+### HealBot Report (`healbot-report.html`)
+
+#### Table of Contents
 - Collapsible navigation showing all accounts, servers, and characters
 - Character counts for each server
 - Quick navigation to any character's configuration
 
-### Character Reports
+#### Character Reports
 For each character, you'll see separate tables for each HealBot file:
 
 - **File Header**: Shows which configuration file the bindings come from
@@ -138,7 +158,7 @@ For each character, you'll see separate tables for each HealBot file:
 - **Global Sort**: Buttons to sort all tables on the page simultaneously
 - **Spell Links**: Click spell names to view details on Wowhead
 
-### Sample Output Structure
+#### Sample Output Structure
 ```
 Account/Server/Character
 ├── HealBot.lua
@@ -150,12 +170,51 @@ Account/Server/Character
     └── Ctrl+Right → Water Shield
 ```
 
+### BetterWardrobe Report (`betterwardrobe-report.html`)
+
+#### Table of Contents
+- Collapsible navigation showing all accounts, realms, and characters
+- Outfit counts for each character
+- Quick navigation to any character's outfits
+
+#### Outfit Details
+For each outfit, you'll see:
+
+- **Outfit Name and Icon**: Visual identification of the outfit
+- **Complete Gear Table**: All 12 equipment slots with item details
+  - **Slot**: Equipment slot name (Head, Shoulder, Chest, etc.)
+  - **Item**: WowHead-linked item name with tooltip on hover
+  - **Source ID**: Internal appearance ID from BetterWardrobe
+  - **All Item IDs**: All items that share the same appearance
+- **Export Options**:
+  - **Blizzard Format**: BWO:1:sourceID,sourceID,... (copy to clipboard)
+  - **WowHead Dressing Room**: Direct link to visualize the full outfit
+
+#### Sample Outfit View
+```
+Character: Paladin-Silvermoon
+Outfit: "Golden Crusader"
+├── Head → Item 104604 (Helmet of Guiding Light)
+├── Shoulder → Item 98734 (Pauldrons of Faith)
+├── Chest → Item 99012 (Breastplate of Radiance)
+└── ... (12 slots total)
+
+Export:
+- Blizzard: BWO:1:12345,67890,11223,... [Copy]
+- Dressing Room: https://www.wowhead.com/dressing-room#... [View]
+```
+
 ## Troubleshooting
 
 ### "No HealBot configuration data found"
 - Ensure you're pointing to the correct World of Warcraft directory
 - Check that you have HealBot addon installed and configured
 - Verify that HealBot has saved your settings (try logging in and out of the game)
+
+### "No BetterWardrobe data found"
+- Ensure you have BetterWardrobe addon installed
+- Check that you've saved at least one outfit in-game
+- Verify the BetterWardrobe.lua file exists in WTF/Account/[AccountName]/SavedVariables/
 
 ### "Could not find or load main class" (JAR issues)
 - Ensure you have Java 17 or later installed
@@ -175,6 +234,16 @@ Account/Server/Character
 - Check that the character has logged in recently with HealBot enabled
 - Verify the SavedVariables files exist and contain data
 
+### Outfits show source IDs instead of item names
+- This is normal behavior - BetterWardrobe stores appearance source IDs
+- The parser includes a CSV database (155K+ mappings) to resolve these to actual items
+- WowHead links will work correctly with the resolved item IDs
+
+### WowHead tooltips not appearing
+- Ensure you have an active internet connection
+- Check that JavaScript is enabled in your browser
+- Try refreshing the page or clearing browser cache
+
 ### Performance Issues
 - Large numbers of characters may take longer to process
 - The HTML report includes all data for fast browsing
@@ -182,10 +251,13 @@ Account/Server/Character
 
 ## Tips
 
-- **Regular Backups**: Run this after major HealBot configuration changes
-- **Compare Configurations**: Use the report to compare setups between characters
+- **Regular Backups**: Run this after major addon configuration changes
+- **Compare Configurations**: Use the reports to compare setups between characters
 - **Share Reports**: The HTML files are self-contained and can be shared with others
 - **Browser Compatibility**: Works best in modern browsers (Chrome, Firefox, Edge)
+- **Outfit Management**: Use the BetterWardrobe report to track transmog collections across alts
+- **Export to Game**: Copy the Blizzard export format to quickly recreate outfits in-game
+- **Visualize Sets**: Use WowHead Dressing Room links to preview full outfit appearances
 
 ## Support
 

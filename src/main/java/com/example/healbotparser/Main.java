@@ -67,18 +67,32 @@ public class Main {
         Path wowPath = Paths.get(wowDirectoryPath);
 
         HealBotParser parser = new HealBotParser();
+        BetterWardrobeParser bwParser = new BetterWardrobeParser();
 
         try {
+            // Parse HealBot data
             System.out.println("Parsing HealBot SavedVariables...");
             Map<String, Map<String, List<BindingInfo>>> data = parser.parseDirectory(wowPath);
 
-            System.out.println("Generating HTML report...");
+            System.out.println("Generating HealBot HTML report...");
             parser.generateHtmlReport(data, outputFile);
+            System.out.println("HealBot report generated: " + outputFile);
+            System.out.println("Found HealBot data for " + data.size() + " accounts/characters.");
+
+            // Parse BetterWardrobe data
+            System.out.println();
+            System.out.println("Parsing BetterWardrobe SavedVariables...");
+            Map<String, List<OutfitInfo>> bwData = bwParser.parseDirectory(wowPath);
+
+            String bwOutputFile = "betterwardrobe-report.html";
+
+            System.out.println("Generating BetterWardrobe HTML report...");
+            bwParser.generateHtmlReport(bwData, bwOutputFile);
+            System.out.println("BetterWardrobe report generated: " + bwOutputFile);
+            System.out.println("Found BetterWardrobe data for " + bwData.size() + " characters.");
 
             System.out.println();
             System.out.println("=== Parsing Complete ===");
-            System.out.println("Report generated: " + outputFile);
-            System.out.println("Found data for " + data.size() + " accounts/characters.");
         } catch (Exception e) {
             System.err.println("Error during parsing: " + e.getMessage());
             e.printStackTrace();
